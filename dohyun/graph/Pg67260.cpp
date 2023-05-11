@@ -1,44 +1,47 @@
 #include <bits/stdc++.h>
 using namespace std;
+using ti4 = tuple<int, int, int, int>;
 
-vector<int> adj[200'000];
-bool visited[200'000];
-unordered_map<int, int> pre, waiting;
+const int INF = 1e9;
+int dist[25][25][4];
 
-void solve(int cur) {
-	if (visited[cur]) return;
+int dx[4] = {0, 0, 1, -1};
+int dy[4] = {1, -1, 0, 0};
 
-	if (!visited[pre[cur]]) {
-		waiting[cur] = pre[cur];
-		return;
+int solution(vector<vector<int>> board) {
+	int n = board.size();
+	fill(&dist[0][0][0], &dist[24][24][3] + 1, INF);
+
+	priority_queue<ti4> pq;
+	for (int i = 0; i < 4; ++i) {
+		dist[0][0][i] = 0;
+		pq.push({0, 0, 0, i}); // {비용, X, Y, 방향}
 	}
 
-	visited[cur] = true;
-	solve(waiting[cur]);
+	while (!pq.empty()) {
+		auto [cost, cx, cy, dir] = pq.top();
+		pq.pop();
 
-	for (int next : adj[cur])
-		solve(next);
-}
+		if (dist[cx][cy][dir] < cost)
+			continue;
 
-bool solution(int n, vector<vector<int>> path, vector<vector<int>> order) {
-	for (int i = 0; i < path.size(); ++i) {
-		adj[path[i][0]].push_back(path[i][1]);
-		adj[path[i][1]].push_back(path[i][0]);
+		for (int i = 0; i < 4; ++i) {
+			int nx = cx + dx[i];
+			int ny = cy + dy[i];
+
+			if (!(nx >= 0 && nx < n && ny >= 0 && ny < n)) continue;
+			if (board[nx][ny] == 1) continue;
+
+			int nextCost = (dir == i ? cost + 100 : cost + 600);
+			if (dist[nx][ny][i] > nextCost) {
+				dist[nx][ny][i] = nextCost;
+				pq.push({nextCost, nx, ny, i});
+			}
+		}
 	}
 
-	for (int i = 0; i < order.size(); ++i) // B에 들리기 전에 A를 먼저 가야함
-		pre[order[i][1]] = order[i][0];
-
-	if (pre[0])
-		return false;
-
-	visited[0] = true;
-	for (int conn : adj[0])
-		solve(conn);
-
-	for (int i = 0; i < n; ++i)
-		if (!visited[i])
-			return false;
-
-	return true;
+	int ans = INF;
+	for (int i = 0; i < 4; ++i)
+		ans = min(ans, dist[n - 1][n - 1][i]);
+    return ans;
 }
